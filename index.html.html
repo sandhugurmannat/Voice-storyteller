@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Voice-Interactive Storyteller</title>
+  <link rel="stylesheet" href="body.css"> <!-- ✅ linked to body.css -->
+</head>
+<body>
+  <h1>🎙️ Voice Storyteller</h1>
+  <p>Click the button and speak your story idea!</p>
+
+  <label for="genre">Choose a genre:</label>
+  <select id="genre">
+    <option value="fantasy">Fantasy</option>
+    <option value="sci-fi">Sci-Fi</option>
+    <option value="funny">Funny</option>
+    <option value="adventure">Adventure</option>
+    <option value="surprise">Surprise Me</option>
+  </select>
+  <br><br>
+
+  <button id="recordBtn">🎤 Start Recording</button>
+  <p><strong>Your Idea:</strong> <span id="userPrompt">...</span></p>
+
+  <h3>Generated Story:</h3>
+  <div id="storyOutput"></div>
+
+  <div id="controls">
+    <button id="pauseBtn">⏸️ Pause</button>
+    <button id="resumeBtn">▶️ Resume</button>
+    <button id="replayBtn">🔁 Replay</button>
+    <button id="downloadBtn">💾 Save Story as .txt</button>
+  </div>
+
+  <h3>Story Image:</h3>
+  <img id="storyImage" src="" alt="Story Illustration">
+
+  <script>
+    const recordBtn = document.getElementById("recordBtn");
+    const userPrompt = document.getElementById("userPrompt");
+    const storyOutput = document.getElementById("storyOutput");
+    const storyImage = document.getElementById("storyImage");
+
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resumeBtn = document.getElementById("resumeBtn");
+    const replayBtn = document.getElementById("replayBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-US';
+
+    let lastSpokenText = "";
+
+    recordBtn.onclick = () => {
+      storyOutput.innerHTML = "";
+      userPrompt.innerText = "...";
+      storyImage.style.display = "none";
+      recognition.start();
+    };
+
+    recognition.onresult = (event) => {
+      const prompt = event.results[0][0].transcript.toLowerCase();
+      userPrompt.innerText = prompt;
+
+      const genre = document.getElementById("genre").value;
+      let story = "";
+      let imageUrl = "";
+
+      const keywords = {
+        fantasy: ["dragon", "castle", "magic", "wizard", "forest"],
+        "sci-fi": ["spaceship", "robot", "alien", "galaxy", "jupiter"],
+        funny: ["goat", "mayor", "zoo", "silly", "party"],
+        adventure: ["jungle", "map", "compass", "treasure", "mountain"]
+      };
+
+      let selectedGenre = genre;
+
+      if (genre === "surprise") {
+        for (let key in keywords) {
+          if (keywords[key].some(word => prompt.includes(word))) {
+            selectedGenre = key;
+            break;
+          }
+        }
+      }
+
+      switch (selectedGenre) {
+        case "fantasy":
+          story = `Once upon a time, in a land of magic, a hero discovered a ${prompt.includes("dragon") ? "mighty dragon" : "mysterious scroll"} that changed their fate.`;
+          imageUrl = "assets/images/fantasy.png";
+          break;
+        case "sci-fi":
+          story = `On the edge of the solar system, a crew encountered a ${prompt.includes("robot") ? "rogue robot" : "glitch in reality"}. What followed was extraordinary.`;
+          imageUrl = "assets/images/sci-fi.png";
+          break;
+        case "funny":
+          story = `It started with a ${prompt.includes("goat") ? "goat in a necktie" : "runaway hay bale"} and ended in a town-wide food fight.`;
+          imageUrl = "assets/images/funny.png";
+          break;
+        case "adventure":
+          story = `With a ${prompt.includes("compass") ? "compass that glowed" : "map with fading ink"}, the journey began. The jungle had secrets.`;
+          imageUrl = "assets/images/adventure.png";
+          break;
+        default:
+          story = `Penelope’s fridge developed feelings after a lightning storm and applied to culinary school. Yes, really.`;
+          imageUrl = "https://i.imgur.com/t72aLVI.jpg";
+      }
+
+      storyOutput.innerHTML = story;
+
+      lastSpokenText = story;
+      const tts = new SpeechSynthesisUtterance(lastSpokenText);
+      tts.lang = 'en-US';
+      tts.rate = 1.0;
+      speechSynthesis.speak(tts);
+
+      storyImage.src = imageUrl;
+      storyImage.style.display = "block";
+    };
+
+    recognition.onerror = (e) => {
+      alert("Error with voice input: " + e.error);
+    };
+
+    pauseBtn.onclick = () => {
+      speechSynthesis.pause();
+    };
+
+    resumeBtn.onclick = () => {
+      speechSynthesis.resume();
+    };
+
+    replayBtn.onclick = () => {
+      if (lastSpokenText) {
+        const replay = new SpeechSynthesisUtterance(lastSpokenText);
+        replay.lang = 'en-US';
+        replay.rate = 1.0;
+        speechSynthesis.speak(replay);
+      }
+    };
+
+    downloadBtn.onclick = () => {
+      if (lastSpokenText) {
+        const blob = new Blob([lastSpokenText], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "my_story.txt";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("No story to download yet!");
+      }
+    };
+  </script>
+</body>
+</html>
